@@ -1,0 +1,30 @@
+---
+- hosts: web_servers
+  serial: 
+    - 1
+    - 2
+    - 25%
+    - 50%
+  tasks:
+    - name: Stop application services
+      service:
+        name: "{{ item }}"
+        state: stopped
+      loop: "{{ application_services }}"
+
+    - name: Apply patches
+      dnf:
+        name: "*"
+        state: latest
+      register: patch_result
+
+    - name: Reboot if needed
+      reboot:
+        reboot_timeout: 300
+      when: patch_result.changed
+
+    - name: Start application services
+      service:
+        name: "{{ item }}"
+        state: started
+      loop: "{{ application_services }}"
